@@ -1,0 +1,5 @@
+{
+  "name": "PLOV: Proprietary Logic Ownership Validator",
+  "description": "A cryptographic validation tool for securing intellectual property through header hash validation, providing a timestamped proof of logic ownership.",
+  "requestFramePermissions": ["microphone"]
+}
