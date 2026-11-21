@@ -122,68 +122,45 @@ export async function computeMerkleRoot(hashes: string[]): Promise<string> {
  * Generates a formal Cease & Desist / Statutory Notice of Prior Art
  * under Texas HB 149 (TRAIGA) § 492.003 & § 492.008.
  */
-export function generateFormalDemandLetter(record: CryptoRecordPreimage, adverseParty: string = "ADVERSE ENTITY / PROSPECTIVE INFRINGER"): string {
-  const formattedDate = new Date(record.timestamp).toUTCString();
-  return `================================================================================
-FORMAL LEGAL NOTICE: STATUTORY ASSERTION OF PRIOR ART & ALGORITHMIC SAFE HARBOR
-PURSUANT TO TEXAS RESPONSIBLE AI GOVERNANCE ACT (TRAIGA - TEXAS HB 149)
-================================================================================
+export function generateFormalDemandLetter(record: CryptoRecordPreimage, adverseParty: string = "RECIPIENT"): string {
+  return `DRAFT EVIDENCE SUMMARY — NOT A LEGAL NOTICE
 
-DATE OF NOTICE: ${new Date().toUTCString()}
-REGISTRATION ID: CERT-${record.id}
-TO: ${adverseParty.toUpperCase()}
-FROM: Sovereign Custodian <${record.ownerEmail}>
+Record ID: ${record.id}
+Recipient: ${adverseParty}
+Timestamp supplied in record: ${record.timestamp}
+Owner email supplied in record: ${record.ownerEmail}
+Content SHA-256: ${record.logicHash}
+Composite SHA-256 digest: ${record.headerHash}
 
-RE: IRREVOCABLE PRIOR ART ATTESTATION & IMMUTABLE PROPRIETARY LOGIC OWNERSHIP
+A matching SHA-256 digest can show that the supplied content and metadata reproduce the recorded digest. It does not prove who created or owned the content, when it was created, that the timestamp or email is authentic, patent novelty, prior-art status, copyright ownership, trade-secret rights, infringement, or eligibility for any statutory safe harbor.
 
-Dear Sir/Madam:
+A SHA-256 digest is not a digital signature or trusted timestamp. Anyone with the same inputs can reproduce it. Stronger provenance requires independent timestamping, signed attestations verified against trusted public keys, custody records, and supporting source evidence.
 
-PLEASE BE ADVISED that the undersigned Custodian (${record.ownerEmail}) is the lawful creator and sole proprietary rights holder of the algorithmic architecture, data structures, and computational logic attested by the immutable cryptographic hash identified below.
-
-1. STATUTORY SPECIFICATIONS UNDER TEXAS HB 149:
-   - Composite Header Seal (SHA-256): ${record.headerHash}
-   - Content Digest (SHA-256):        ${record.logicHash}
-   - Preimage Epoch Timestamp:         ${record.timestamp} (${formattedDate})
-   - Forensic Topology Fingerprint:    ${record.fingerprint}
-   - Governing Equation:               HeaderHash = SHA256(LogicHash || Timestamp || Email || Fingerprint)
-
-2. LEGAL EFFECT & PRIOR ART BAR:
-   Under Texas HB 149 (effective January 1, 2026), codified in the Texas Civil Practice & Remedies Code § 492 et seq., and federal common-law prior art doctrine (35 U.S.C. § 102):
-   (a) The sealed composite header hash establishes undeniable mathematical proof that this proprietary logic was conceived and operable in its full specification as of ${formattedDate}.
-   (b) Any subsequently filed patent, copyright registration, or trade-secret usurpation asserted by ${adverseParty} is barred as derivative, anticipatory, and nullified by prior conception.
-   (c) The undersigned explicitly invokes the statutory Algorithmic Safe Harbor protections provided by Texas HB 149 § 492.008.
-
-3. FORMAL DEMAND & PRESERVATION OF EVIDENCE:
-   You are hereby DEMANDED to immediately:
-   - Cease and desist any attempts to patent, commercialize, or claim exclusive provenance over any logic derived from or equivalent to this attested preimage.
-   - Preserve all internal technical records, commit logs, neural training data, and communications pursuant to statutory spoliation rules.
-
-This document serves as formal legal notice. Mathematical verification may be independently executed by resolving the preimage tuple against standard FIPS 180-4 SHA-256 algorithms.
-
-Respectfully executed,
-
-Sovereign Proprietary Logic Custodian
-Recorded on the PLOV Sovereign Protocol
-Verification Seal: ${record.headerHash}
-================================================================================`;
+This export is informational only. It is not a cease-and-desist notice, affidavit, legal opinion, or substitute for advice from a qualified intellectual-property attorney. Do not send or file it as a legal instrument without professional review.
+`;
 }
-
 /**
  * Generates an entirely offline, standalone, single-file HTML courtroom verifier.
  * A judge or examiner can open this file in any browser without an internet connection,
  * and it will locally calculate SHA-256 over the preimage to confirm the seal.
  */
 export function generateStandaloneVerifierHTML(record: CryptoRecordPreimage): string {
-  const safeLogicJson = JSON.stringify(record.logic);
-  const safeEmail = record.ownerEmail.replace(/"/g, '&quot;');
-  const safeFingerprint = record.fingerprint.replace(/"/g, '&quot;');
+  const html = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const js = (value: string) => JSON.stringify(value).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026');
+  const safeLogicJson = js(record.logic);
+  const safeEmail = html(record.ownerEmail);
+  const safeFingerprint = html(record.fingerprint);
+  const safeId = html(record.id);
+  const safeLogicHash = html(record.logicHash);
+  const safeHeaderHash = html(record.headerHash);
+  const safeTimestamp = Number.isFinite(record.timestamp) ? String(record.timestamp) : 'INVALID';
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PLOV Cryptographic Verification Seal: ${record.id}</title>
+  <title>PLOV Content Digest Check: ${safeId}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -294,9 +271,9 @@ export function generateStandaloneVerifierHTML(record: CryptoRecordPreimage): st
 </head>
 <body>
   <div class="container">
-    <span class="badge">Standalone Offline Proof Bundle</span>
+    <span class="badge">Standalone Offline Digest Check</span>
     <h1>PLOV Cryptographic Verification Seal</h1>
-    <p class="subtitle">TEXAS HB 149 (TRAIGA) &bull; STANDALONE DETERMINISTIC COURTROOM VERIFIER</p>
+    <p class="subtitle">CONTENT INTEGRITY ONLY • DOES NOT PROVE AUTHORSHIP, CREATION DATE, OWNERSHIP, PRIOR ART, OR LEGAL RIGHTS</p>
 
     <div id="statusBox" class="status-card verified">
       <div>
@@ -309,7 +286,7 @@ export function generateStandaloneVerifierHTML(record: CryptoRecordPreimage): st
     <div class="grid">
       <div class="box">
         <div class="label">Certificate / Seal ID</div>
-        <div class="val">${record.id}</div>
+        <div class="val">${safeId}</div>
       </div>
       <div class="box">
         <div class="label">Time of Sealing (UTC)</div>
@@ -317,7 +294,7 @@ export function generateStandaloneVerifierHTML(record: CryptoRecordPreimage): st
       </div>
       <div class="box">
         <div class="label">Epoch Milliseconds</div>
-        <div class="val">${record.timestamp}</div>
+        <div class="val">${safeTimestamp}</div>
       </div>
       <div class="box">
         <div class="label">Registered Custodian</div>
@@ -327,7 +304,7 @@ export function generateStandaloneVerifierHTML(record: CryptoRecordPreimage): st
 
     <div class="box" style="margin-bottom: 20px;">
       <div class="label">Recorded Composite Header Hash (Sealed Target)</div>
-      <div class="val highlight">${record.headerHash}</div>
+      <div class="val highlight">${safeHeaderHash}</div>
     </div>
 
     <div class="box" style="margin-bottom: 20px;">
@@ -349,18 +326,18 @@ export function generateStandaloneVerifierHTML(record: CryptoRecordPreimage): st
     </div>
 
     <div class="footer">
-      <span>FIPS 180-4 SHA-256 VERIFIED LOCALLY</span>
-      <span>TEXAS CIVIL PRACTICE & REMEDIES CODE § 492</span>
+      <span>LOCAL SHA-256 DIGEST CHECK — NOT IDENTITY OR TIMESTAMP ATTESTATION</span>
+      <span>NO LEGAL STATUS OR OWNERSHIP DETERMINATION</span>
     </div>
   </div>
 
   <script>
     const RECORD_LOGIC = ${safeLogicJson};
-    const RECORD_LOGIC_HASH = "${record.logicHash}";
+    const RECORD_LOGIC_HASH = ${js(record.logicHash)};
     const RECORD_TIMESTAMP = ${record.timestamp};
-    const RECORD_EMAIL = "${record.ownerEmail.toLowerCase()}";
-    const RECORD_FINGERPRINT = "${record.fingerprint}";
-    const TARGET_HEADER_HASH = "${record.headerHash.toLowerCase()}";
+    const RECORD_EMAIL = ${js(record.ownerEmail.toLowerCase())};
+    const RECORD_FINGERPRINT = ${js(record.fingerprint)};
+    const TARGET_HEADER_HASH = ${js(record.headerHash.toLowerCase())};
 
     document.getElementById("logicPreimage").textContent = RECORD_LOGIC;
 
@@ -388,12 +365,12 @@ export function generateStandaloneVerifierHTML(record: CryptoRecordPreimage): st
 
         if (isExactMatch) {
           statusBox.className = "status-card verified";
-          statusTitle.textContent = "MATHEMATICAL OWNERSHIP VERIFIED: 100% BITWISE MATCH";
-          statusSub.textContent = "Preimage deterministic equation matches the sealed Header Hash bit-for-bit.";
+          statusTitle.textContent = "CONTENT DIGEST MATCH: 256-BIT EQUALITY";
+          statusSub.textContent = "The supplied content and metadata reproduce this digest. This does not authenticate authorship, time, ownership, or legal priority.";
           statusIcon.textContent = "✓";
         } else {
           statusBox.className = "status-card failed";
-          statusTitle.textContent = "HASH MISMATCH: TAMPERING DETECTED";
+          statusTitle.textContent = "CONTENT DIGEST MISMATCH";
           statusSub.textContent = "Computed hash does not match target. Content or metadata altered.";
           statusIcon.textContent = "✗";
         }
@@ -423,61 +400,24 @@ export function generateRFC6920URI(hashHex: string): string {
  */
 export function generateUSPTO130Declaration(
   record: CryptoRecordPreimage,
-  adversePatentOrApp: string = "ADVERSE PATENT OR APPLICATION UNDER CHALLENGE"
+  adversePatentOrApp: string = "REFERENCE MATTER"
 ): string {
-  const formattedDate = new Date(record.timestamp).toUTCString();
-  const rfcUri = generateRFC6920URI(record.headerHash);
+  return `DRAFT PROVENANCE EVIDENCE NOTES — ATTORNEY REVIEW REQUIRED
 
-  return `================================================================================
-IN THE UNITED STATES PATENT AND TRADEMARK OFFICE (USPTO)
-AND BEFORE THE PATENT TRIAL AND APPEAL BOARD (PTAB)
-================================================================================
+Matter reference: ${adversePatentOrApp}
+Record ID: ${record.id}
+Custodian email supplied in record: ${record.ownerEmail}
+Timestamp supplied in record: ${record.timestamp}
+Content SHA-256: ${record.logicHash}
+Composite digest: ${record.headerHash}
+Fingerprint supplied in record: ${record.fingerprint}
 
-IN RE MATTER OF: ${adversePatentOrApp.toUpperCase()}
-CHALLENGING CUSTODIAN / INVENTOR: ${record.ownerEmail}
-RECORD REGISTRATION IDENTIFIER: CERT-${record.id}
-STATUTORY BASIS: 37 C.F.R. § 1.130(a) & 35 U.S.C. § 102(b)(1)(B)
-SUPPLEMENTAL AUTHORITY: Texas Civil Practice & Remedies Code § 492 et seq. (TRAIGA)
+LIMITED TECHNICAL STATEMENT
+The SHA-256 values can be independently recomputed from the supplied preimage. A matching digest supports only the conclusion that the checked content and metadata are consistent with the recorded digest.
 
-DECLARATION OF PRIOR INVENTORSHIP AND IRREFUTABLE PRIOR ART REDUCTION TO PRACTICE
-UNDER 37 C.F.R. § 1.130(a) & § 1.131
+IMPORTANT LIMITATIONS
+A matching digest does not independently prove identity, authorship, date of creation, possession at that date, public disclosure, patent novelty, prior-art status, ownership, or any legal conclusion. The email address and timestamp are input fields, not authenticated identity or trusted time evidence. This record is not a cryptographic signature, trusted timestamp, USPTO filing, or adjudication.
 
-I, the undersigned Inventor / Sovereign Custodian (${record.ownerEmail}), hereby declare under 
-penalty of perjury under the laws of the United States of America:
-
-1. STATEMENT OF PRIOR CONCEPTION & DILIGENT REDUCTION TO PRACTICE:
-   Prior to any effective filing date or alleged conception claimed in ${adversePatentOrApp}, 
-   the undersigned conceived of, designed, and fully reduced to practice the complete computational 
-   architecture and algorithmic logic represented by the cryptographic preimage below.
-
-2. MATHEMATICALLY SEALED GENESIS EVIDENCE:
-   - Certified Composite Header Seal (SHA-256): ${record.headerHash}
-   - Content Digest (SHA-256):                  ${record.logicHash}
-   - RFC 6920 Content-Addressed URI:            ${rfcUri}
-   - Deterministic Sealing Timestamp:           ${record.timestamp} ms (${formattedDate})
-   - Forensic Topological Fingerprint:          ${record.fingerprint}
-   - Preimage Cryptographic Binding:            SHA256(LogicHash || Timestamp || Email || Fingerprint)
-
-3. LEGAL BAR AGAINST ADVERSE PATENT GRANTS (35 U.S.C. § 102 & § 103):
-   (a) The subject matter disclosed in the sealed preimage is identical or renders obvious every limitation 
-       asserted in the claims of ${adversePatentOrApp}.
-   (b) Pursuant to 35 U.S.C. § 102(a)(1), the attested prior invention bars patentability of any subsequent 
-       derivative filings by adverse commercial entities.
-   (c) Under 37 C.F.R. § 1.130(a), this declaration constitutes prima facie proof that the invention originated 
-       solely with the declarant and was in declarant's custody prior to the adverse filing.
-
-4. INTEGRITY & ZERO-KNOWLEDGE VERIFICATION:
-   The underlying logic was verified using deterministic FIPS 180-4 SHA-256 hash algorithms. 
-   Any patent examiner, administrative patent judge, or federal district court can independently 
-   re-derive the exact 256-bit header hash from the preimage inputs without proprietary distortion.
-
-I hereby declare that all statements made herein of my own knowledge are true and that all statements 
-made on information and belief are believed to be true; and further that these statements were made 
-with the knowledge that willful false statements and the like so made are punishable by fine or 
-imprisonment, or both, under Section 1001 of Title 18 of the United States Code.
-
-Executed on: ${new Date().toUTCString()}
-By: Sovereign Custodian <${record.ownerEmail}>
-Cryptographic Prior Art Seal: ${record.headerHash}
-================================================================================`;
+Any declaration under penalty of perjury must be based on the declarant's personal knowledge and supporting evidence. Patent and prior-art questions require analysis under applicable law and facts. This draft must not be signed or submitted without review by a qualified patent attorney.
+`;
 }
